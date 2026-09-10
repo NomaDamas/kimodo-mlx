@@ -8,6 +8,8 @@ dist/
 build/
 out/
 *.tsbuildinfo
+*.pyc
+__pycache__/
 
 # Environment & secrets
 .env
@@ -33,6 +35,16 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.omo/
+models/
+weights/
+*.gguf
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.npz
+*.onnx
 
 # Coverage
 coverage/
