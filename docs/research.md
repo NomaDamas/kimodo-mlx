@@ -34,6 +34,13 @@ produces a 4096-wide text embedding, and runs a diffusion/DDIM denoiser.
 Motion checkpoints differ by skeleton and representation, including SOMA and
 Unitree G1 variants.
 
+The investigated reference revision was
+`1aece8c124d73d255ceff5086d983b844c9f4e94`. Its default denoiser
+configuration is 16 layers per stage, width 1024, feed-forward width 2048,
+8 attention heads, GELU, and zero dropout. The public motion feature layout
+is `9 + 12*J`: 273 features for 22-joint SMPL-X, 369 for 30-joint SOMA, and
+417 for 34-joint G1. One prompt is limited to 300 frames / 10 seconds.
+
 ### localai-org/kimodo.cpp
 
 `kimodo.cpp` is an Apache-2.0 C++/GGML implementation. Its porting notes
@@ -104,6 +111,13 @@ NVIDIA Open Model License; SMPL-X RP is identified as internal R&D-only and
 not redistributable. The repository will not vendor model weights. It will
 record exact model identifiers, revisions, hashes, and license acknowledgments
 in benchmark artifacts and require users to obtain gated assets themselves.
+
+The LocalAI port was investigated at revision
+`568b0253f346fbe369587c7dae73d58594a14c90a`, with GGML submodule revision
+`8c63e70982c95ceb862e3a1073a2c1beef75d60a`. The public SOMA/G1 motion GGUFs
+are native F32 artifacts; the native text bundle is separate and uses
+bidirectional LLM2Vec semantics, so neither a stock causal embedding path nor
+an assumed quantized motion model is a valid parity baseline.
 
 ## Sources
 

@@ -19,21 +19,15 @@ def test_missing_motion_asset_is_rejected_before_inference(tmp_path: Path) -> No
         )
 
 
-def test_generation_is_deterministic_for_fixed_seed(tmp_path: Path) -> None:
-    """Given the same fixture and seed, generation returns identical output."""
+def test_generation_refuses_placeholder_inference(tmp_path: Path) -> None:
+    """Given an unconverted fixture, generation refuses a false result."""
     motion = tmp_path / "motion.gguf"
     motion.write_bytes(b"GGUFfixture")
     manifest = AssetManifest(motion=motion, text=None)
 
-    first = generate(
-        prompt="walk forward",
-        manifest=manifest,
-        config=RuntimeConfig(seed=42, steps=1, backend="fixture"),
-    )
-    second = generate(
-        prompt="walk forward",
-        manifest=manifest,
-        config=RuntimeConfig(seed=42, steps=1, backend="fixture"),
-    )
-
-    assert first.output == second.output
+    with pytest.raises(RuntimeError, match="refusing placeholder inference"):
+        generate(
+            prompt="walk forward",
+            manifest=manifest,
+            config=RuntimeConfig(seed=42, steps=1, backend="fixture"),
+        )

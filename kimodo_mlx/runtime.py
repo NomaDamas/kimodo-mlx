@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-import hashlib
 import importlib.util
-import json
 import platform
-import struct
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -82,24 +79,14 @@ def generate(
     manifest: AssetManifest,
     config: RuntimeConfig,
 ) -> Generation:
-    """Validate assets and produce a deterministic fixture output.
-
-    Actual Kimodo tensor execution is intentionally refused until the MLX
-    adapter and model tensor fixtures are installed. The deterministic digest
-    keeps the contract testable without pretending that a placeholder is model
-    inference.
-    """
+    """Validate assets and refuse to claim inference before the adapter exists."""
     _validate_gguf(manifest.motion)
     backend = _backend_name(config.backend)
     if backend == "unavailable":
         raise RuntimeError(
             "no Apple backend installed; install MLX and provide Kimodo GGUF assets"
         )
-    started = time.perf_counter()
-    payload = json.dumps(
-        {"prompt": prompt, "seed": config.seed, "steps": config.steps},
-        sort_keys=True,
-    ).encode()
-    output = hashlib.sha256(payload).digest()
-    elapsed_ms = (time.perf_counter() - started) * 1000
-    return Generation(output=output, elapsed_ms=elapsed_ms, backend=backend)
+    raise RuntimeError(
+        f"Kimodo tensor adapter is not implemented for backend {backend}; "
+        "refusing placeholder inference"
+    )
