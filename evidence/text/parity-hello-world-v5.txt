@@ -1,0 +1,5 @@
+max_abs_error = 8.969498e-02
+rel_l2_error  = 6.349668e-03
+cosine_sim    = 0.99997991
+STATUS: FAIL
+exit_code=0

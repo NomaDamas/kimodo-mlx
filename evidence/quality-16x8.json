@@ -1,0 +1,17 @@
+{
+  "prompt": "walk forward",
+  "frames": 16,
+  "steps": 8,
+  "seed": 42,
+  "embedding_vs_kmd_encode": {
+    "cosine_gt": 0.99,
+    "max_abs": 0.0874185562133789,
+    "status": "pass"
+  },
+  "motion_vs_kimodo_cpp_metal_same_seed": {
+    "root_mae": 0.04091748222708702,
+    "rotation_mae": 0.02579570561647415,
+    "root_max_abs": 0.15140606462955475,
+    "note": "Initial noise RNGs differ (NumPy vs libc++ mt19937_64); this is a same-seed comparison, not injected-noise bitwise parity."
+  }
+}

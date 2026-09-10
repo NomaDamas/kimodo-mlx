@@ -1,0 +1,70 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 16d7df9..4690f1d 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
+ set(CMAKE_CXX_EXTENSIONS OFF)
+ option(KIMODO_BUILD_TESTS "Build Kimodo tests" ON)
+ option(KIMODO_ENABLE_VULKAN "Enable GGML Vulkan backend when GGML is available" ON)
++option(KIMODO_ENABLE_METAL "Enable GGML Metal backend when GGML is available" ON)
+ option(KIMODO_ENABLE_FUZZERS "Build libFuzzer parser targets" OFF)
+ set(KIMODO_GGML_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/ggml" CACHE PATH "Pinned GGML submodule source directory")
+ set(KIMODO_ROOT_PARITY_MODEL "${CMAKE_CURRENT_SOURCE_DIR}/models/kimodo-smplx-rp-v1-f32.gguf" CACHE FILEPATH "F32 motion GGUF required by parity tests")
+@@ -31,18 +32,25 @@ if(EXISTS "${KIMODO_GGML_SOURCE_DIR}/CMakeLists.txt")
+   set(GGML_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+   set(GGML_NATIVE OFF CACHE BOOL "" FORCE)
+   set(GGML_VULKAN ${KIMODO_ENABLE_VULKAN} CACHE BOOL "" FORCE)
++  set(GGML_METAL ${KIMODO_ENABLE_METAL} CACHE BOOL "" FORCE)
+   set(GGML_BACKEND_DL OFF CACHE BOOL "" FORCE)
+   set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
+   add_subdirectory("${KIMODO_GGML_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/ggml" EXCLUDE_FROM_ALL)
+   set(KIMODO_HAVE_GGML TRUE)
+   set(KIMODO_VK_LIBS)
+   set(KIMODO_VK_DEFS)
++  set(KIMODO_METAL_LIBS)
++  set(KIMODO_METAL_DEFS)
+   if(KIMODO_ENABLE_VULKAN AND TARGET ggml-vulkan)
+     set(KIMODO_VK_LIBS ggml-vulkan)
+     set(KIMODO_VK_DEFS KIMODO_HAVE_GGML_VULKAN=1)
+   endif()
+-  target_link_libraries(kimodo PRIVATE ggml ${KIMODO_VK_LIBS})
+-  target_compile_definitions(kimodo PRIVATE KIMODO_HAVE_GGML=1 ${KIMODO_VK_DEFS})
++  if(KIMODO_ENABLE_METAL AND TARGET ggml-metal)
++    set(KIMODO_METAL_LIBS ggml-metal)
++    set(KIMODO_METAL_DEFS KIMODO_HAVE_GGML_METAL=1)
++  endif()
++  target_link_libraries(kimodo PRIVATE ggml ${KIMODO_VK_LIBS} ${KIMODO_METAL_LIBS})
++  target_compile_definitions(kimodo PRIVATE KIMODO_HAVE_GGML=1 ${KIMODO_VK_DEFS} ${KIMODO_METAL_DEFS})
+   target_link_libraries(kmd-inspect PRIVATE ggml)
+   target_compile_definitions(kmd-inspect PRIVATE KIMODO_HAVE_GGML=1)
+   target_sources(kimodo PRIVATE src/ggml_weights.cpp src/denoiser.cpp src/sequence.cpp)
+diff --git a/src/ggml_weights.cpp b/src/ggml_weights.cpp
+index 4fe751f..3e57467 100644
+--- a/src/ggml_weights.cpp
++++ b/src/ggml_weights.cpp
+@@ -14,6 +14,9 @@
+ #include <ggml-backend.h>
+ #include <ggml-cpu.h>
+ #include <gguf.h>
++#if defined(KIMODO_HAVE_GGML_METAL)
++#include <ggml-metal.h>
++#endif
+ #if defined(KIMODO_HAVE_GGML_VULKAN)
+ #include <ggml-vulkan.h>
+ #endif
+@@ -67,8 +70,13 @@ std::expected<std::unique_ptr<ggml_motion_weights>, std::string> ggml_motion_wei
+     gguf_init_params params{true, &result->context_};
+     result->gguf_ = gguf_init_from_file(std::string(path).c_str(), params);
+     if (!result->gguf_ || !result->context_) return std::unexpected("GGML could not load checked motion GGUF");
+-    // Vulkan is the normal inference path.  Keep the CPU backend as a
+-    // portability fallback, including for CI systems without a Vulkan ICD.
++    // Prefer the Apple GPU on Apple Silicon; keep CPU as an explicit parity path.
++#if defined(KIMODO_HAVE_GGML_METAL)
++    const char *requested_backend = std::getenv("KIMODO_BACKEND");
++    if (!requested_backend || std::string_view(requested_backend) != "cpu") {
++        result->backend_ = ggml_backend_metal_init();
++    }
++#endif
+ #if defined(KIMODO_HAVE_GGML_VULKAN)
+     // Retain a deterministic CPU escape hatch for parity triage.  It is not
+     // a performance mode; a captured fixture can establish whether a drift

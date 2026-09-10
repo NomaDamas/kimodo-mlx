@@ -1,0 +1,36 @@
+{
+  "status": "pass",
+  "diagnostics": {
+    "platform": "macOS-26.5.1-arm64-arm-64bit",
+    "machine": "arm64",
+    "python": "3.12.9",
+    "backend_requested": "auto",
+    "backend_selected": "mlx-metal",
+    "mlx_installed": true,
+    "torch_installed": true,
+    "neural_engine_used": false
+  },
+  "frames": 16,
+  "steps": 8,
+  "seed": 42,
+  "mlx_warm_encode_s": [
+    1.7144347080029547,
+    0.225210334174335,
+    0.1951440842822194
+  ],
+  "mlx_warm_sample_s": [
+    0.23360616620630026,
+    0.21044666692614555,
+    0.21561166597530246
+  ],
+  "mlx_warm_e2e_mean_s": 0.9314845418557525,
+  "cpp_e2e_s": 37.00791341718286,
+  "faster": true,
+  "embedding_norm": 133.93031311035156,
+  "root_mean": [
+    0.0022128296550363302,
+    0.9852408170700073,
+    0.5233739018440247
+  ],
+  "neural_engine_used": false
+}

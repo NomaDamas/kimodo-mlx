@@ -18,6 +18,13 @@ not selected for the first port: a Core ML conversion may use
 LLM2Vec attention, custom tensor shapes, and operator coverage make an
 unverified ANE speed claim invalid.
 
+Measured on this Mac Studio M4 Max (64 GB) for 16 frames / 8 steps / seed 42:
+
+- MLX warm end-to-end mean: 0.93 s with resident LLM2Vec weights
+- kimodo.cpp Metal end-to-end: 37.0 s on the same prompt and assets
+- LLM2Vec embedding cosine versus kmd-encode: > 0.99
+- Neural Engine was not used (`neural_engine_used: false`)
+
 The first shippable milestone is therefore a truthful Apple GPU port and a
 benchmark harness. ANE offload is a later experiment only if a converted
 subgraph can be proven equivalent and Instruments/Core ML diagnostics show

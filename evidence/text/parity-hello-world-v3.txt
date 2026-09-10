@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "<stdin>", line 5, in <module>
+  File "/Volumes/SSD1/1/kimodo-mlx/kimodo_mlx/text_encoder.py", line 221, in encode
+    x = _layer(x, tensors, positions)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Volumes/SSD1/1/kimodo-mlx/kimodo_mlx/text_encoder.py", line 184, in _layer
+    scores = mx.einsum("thd,shd->hts", q, k) / math.sqrt(_HEAD_DIM)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: [einsum] Cannot broadcast dimension 1 of input 1 with shape (16,8,128) to size 32.
+exit_code=1
