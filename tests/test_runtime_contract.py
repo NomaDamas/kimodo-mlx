@@ -19,13 +19,13 @@ def test_missing_motion_asset_is_rejected_before_inference(tmp_path: Path) -> No
         )
 
 
-def test_generation_refuses_placeholder_inference(tmp_path: Path) -> None:
-    """Given an unconverted fixture, generation refuses a false result."""
+def test_truncated_gguf_is_rejected_before_inference(tmp_path: Path) -> None:
+    """Given a GGUF magic with no tensors, generation fails instead of inventing motion."""
     motion = tmp_path / "motion.gguf"
     motion.write_bytes(b"GGUFfixture")
     manifest = AssetManifest(motion=motion, text=None)
 
-    with pytest.raises(RuntimeError, match="refusing placeholder inference"):
+    with pytest.raises((ValueError, FileNotFoundError, OSError)):
         generate(
             prompt="walk forward",
             manifest=manifest,

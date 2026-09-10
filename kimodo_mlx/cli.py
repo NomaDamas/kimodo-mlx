@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -22,6 +23,7 @@ def main(argv: list[str] | None = None) -> int:
     generate_parser.add_argument("--text", type=Path)
     generate_parser.add_argument("--seed", type=int, default=42)
     generate_parser.add_argument("--steps", type=int, default=100)
+    generate_parser.add_argument("--frames", type=int, default=30)
     generate_parser.add_argument("--backend", default="auto")
     args = parser.parse_args(argv)
     try:
@@ -31,14 +33,19 @@ def main(argv: list[str] | None = None) -> int:
         result = generate(
             prompt=args.prompt,
             manifest=AssetManifest(motion=args.motion, text=args.text),
-            config=RuntimeConfig(seed=args.seed, steps=args.steps, backend=args.backend),
+            config=RuntimeConfig(seed=args.seed, steps=args.steps, backend=args.backend, frames=args.frames),
         )
+        rotations = getattr(result, "local_rotations_xyzw", None)
+        roots = getattr(result, "root_positions", None)
         print(
             json.dumps(
                 {
                     "backend": result.backend,
                     "elapsed_ms": result.elapsed_ms,
-                    "output_sha256": result.output.hex(),
+                    "frames": None if rotations is None else int(rotations.shape[0]),
+                    "joints": None if rotations is None else int(rotations.shape[1]),
+                    "neural_engine_used": False,
+                    "output_sha256": hashlib.sha256(result.output).hexdigest(),
                 },
                 sort_keys=True,
             )
