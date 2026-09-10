@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Kimodo Apple Silicon 비교</title>
+<style>
+  :root {
+    --bg:#14120f; --panel:#1e1b16; --ink:#f3ece0; --muted:#9a917f;
+    --line:#3a342b; --amber:#e0a24b; --fail:#c45c4a; --pass:#7ea36b;
+  }
+  * { box-sizing:border-box; }
+  html,body { margin:0; background:var(--bg); color:var(--ink);
+    font: 16px/1.45 "Iowan Old Style","Palatino Linotype",Palatino,serif; }
+  code, .mono, td, th { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
+  header { padding:48px 28px 16px; max-width:1280px; margin:0 auto; }
+  h1 { font-size:42px; font-weight:400; letter-spacing:-0.02em; margin:0 0 8px; }
+  .lede { color:var(--muted); max-width:52rem; }
+  main { max-width:1280px; margin:0 auto; padding:0 28px 80px; }
+  .stages { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin:28px 0; }
+  .stage { background:var(--panel); border:1px solid var(--line); border-radius:2px; overflow:hidden; }
+  .stage h2 { margin:0; padding:12px 14px; font-size:13px; font-weight:400; color:var(--muted);
+    border-bottom:1px solid var(--line); letter-spacing:0.06em; text-transform:uppercase; }
+  canvas { display:block; width:100%; height:280px; background:#100e0c; }
+  .controls { display:flex; gap:12px; align-items:center; margin:8px 0 32px; }
+  button { background:transparent; color:var(--ink); border:1px solid var(--amber); border-radius:2px;
+    padding:8px 14px; cursor:pointer; font: inherit; }
+  button:hover { background:var(--amber); color:#14120f; }
+  input[type=range] { flex:1; accent-color:var(--amber); }
+  table { width:100%; border-collapse:collapse; margin:12px 0 40px; }
+  th,td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); font-size:13px; }
+  th { color:var(--muted); font-weight:400; }
+  .ok { color:var(--pass); }
+  .no { color:var(--fail); }
+  .verdict { background:var(--panel); border-left:3px solid var(--amber); padding:20px 24px; margin:24px 0; }
+  .notes { color:var(--muted); font-size:14px; }
+  @media (max-width:900px){ .stages { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>같은 문장, 세 개의 몸</h1>
+  <p class="lede">프롬프트 walk forward · 30프레임 · 10스텝 · seed 42. MLX Metal, kimodo.cpp Metal, kimodo.cpp CPU가 실제로 만든 SOMA 30관절 클립입니다. 원본 NVIDIA PyTorch와 ONNX는 이 Mac에서 생성까지 가지 못했습니다.</p>
+</header>
+<main>
+  <div class="stages">
+    <section class="stage"><h2>kimodo-mlx · Metal</h2><canvas id="c-mlx"></canvas></section>
+    <section class="stage"><h2>kimodo.cpp · Metal</h2><canvas id="c-metal"></canvas></section>
+    <section class="stage"><h2>kimodo.cpp · CPU</h2><canvas id="c-cpu"></canvas></section>
+  </div>
+  <div class="controls">
+    <button id="play">재생</button>
+    <input id="scrub" type="range" min="0" max="29" value="0"/>
+    <span class="mono" id="frame">00 / 30</span>
+  </div>
+  <h2>실측 시간</h2>
+  <table id="times"></table>
+  <div class="verdict" id="verdict"></div>
+  <p class="notes" id="quality"></p>
+  <ul class="notes" id="backend-notes"></ul>
+</main>
+<script>
+const DATA = __PAYLOAD__;
+const canvases = {
+  "mlx-metal": document.getElementById("c-mlx"),
+  "cpp-metal": document.getElementById("c-metal"),
+  "cpp-cpu": document.getElementById("c-cpu"),
+};
+function draw(canvas, clip, frame) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.fillStyle = "#100e0c"; ctx.fillRect(0,0,w,h);
+  if (!clip) {
+    ctx.fillStyle = "#c45c4a"; ctx.font = "14px IBM Plex Mono, monospace";
+    ctx.fillText("클립 없음", 16, 32);
+    return;
+  }
+  ctx.strokeStyle = "#2a261f";
+  for (let x=40;x<w;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
+  for (let y=40;y<h;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
+  const posed = clip.posed[Math.min(frame, clip.posed.length-1)];
+  let minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9;
+  for (const p of posed){ minX=Math.min(minX,p[0]); maxX=Math.max(maxX,p[0]); minY=Math.min(minY,p[1]); maxY=Math.max(maxY,p[1]); }
+  const span = Math.max(maxX-minX, maxY-minY, 0.4);
+  const s = Math.min((w-56) / span, (h-72) / span) * 0.82;
+  const cx = (minX+maxX)/2, cy=(minY+maxY)/2;
+  const map = (p) => [w/2 + (p[0]-cx)*s, h/2 - (p[1]-cy)*s];
+  ctx.strokeStyle = "#e0a24b"; ctx.lineWidth = 2.2; ctx.lineCap = "round";
+  for (const pair of clip.bones) {
+    const a = map(posed[pair[1]]), b = map(posed[pair[0]]);
+    ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+  }
+  ctx.fillStyle = "#f3ece0";
+  for (const p of posed) {
+    const xy = map(p);
+    ctx.beginPath(); ctx.arc(xy[0], xy[1], 2.4, 0, Math.PI*2); ctx.fill();
+  }
+}
+function render(frame) {
+  for (const key of Object.keys(canvases)) draw(canvases[key], DATA.clips[key], frame);
+  document.getElementById("frame").textContent = String(frame).padStart(2,"0") + " / " + (DATA.timings.frames||30);
+}
+let frame = 0, playing = false, timer = null;
+document.getElementById("play").onclick = () => {
+  playing = !playing;
+  document.getElementById("play").textContent = playing ? "정지" : "재생";
+  if (playing) {
+    timer = setInterval(() => {
+      frame = (frame + 1) % (DATA.timings.frames || 30);
+      document.getElementById("scrub").value = frame;
+      render(frame);
+    }, 1000/30);
+  } else { clearInterval(timer); }
+};
+document.getElementById("scrub").oninput = (e) => { frame = Number(e.target.value); render(frame); };
+const tb = document.getElementById("times");
+function pretty(v) {
+  if (v == null) return "—";
+  return v >= 1 ? v.toFixed(2)+"s" : (v*1000).toFixed(0)+"ms";
+}
+tb.innerHTML = "<tr><th>런타임</th><th>가중치 상주</th><th>인코드</th><th>샘플</th><th>E2E</th><th>실행</th></tr>" +
+  DATA.timings.backends.map(b => {
+    return "<tr><td>"+b.label+"</td><td>"+(b.weight_resident ? "예" : "아니오")+"</td><td class=\"mono\">"+pretty(b.encode_s)+"</td><td class=\"mono\">"+pretty(b.sample_s)+"</td><td class=\"mono\">"+pretty(b.e2e_s)+"</td><td class=\""+(b.runnable?"ok":"no")+"\">"+(b.runnable?"실측":"미실행")+"</td></tr>";
+  }).join("");
+const mlx = DATA.timings.backends.find(b => b.id==="mlx-warm");
+const cpp = DATA.timings.backends.find(b => b.id==="cpp-metal");
+let verdict = "실측이 아직 부족합니다.";
+if (mlx && cpp && mlx.runnable && cpp.runnable) {
+  const ratio = cpp.e2e_s / mlx.e2e_s;
+  const worked = mlx.e2e_s < cpp.e2e_s;
+  verdict = worked
+    ? ("효과가 있었습니다. 가중치를 올려 둔 kimodo-mlx는 kimodo.cpp Metal 대비 같은 클립을 " + ratio.toFixed(1) + "배 빨리 만들었습니다 (" + mlx.e2e_s.toFixed(2) + "s vs " + cpp.e2e_s.toFixed(2) + "s). 콜드 스타트는 15GB LLM2Vec을 읽는 비용이 비슷합니다. ONNX와 원본 NVIDIA Python은 이 머신에서 생성 실측이 없습니다.")
+    : ("가중치 상주 MLX가 cpp Metal보다 빠르지 않았습니다 (" + mlx.e2e_s.toFixed(2) + "s vs " + cpp.e2e_s.toFixed(2) + "s).");
+}
+document.getElementById("verdict").textContent = verdict;
+const q = DATA.timings.quality || {};
+document.getElementById("quality").textContent = q.posed_mae_mlx_vs_cpp_metal != null
+  ? ("MLX vs cpp Metal 관절 위치 MAE " + q.posed_mae_mlx_vs_cpp_metal.toFixed(4) + " m, max " + q.posed_max_mlx_vs_cpp_metal.toFixed(4) + " m. 시드는 같으나 초기 노이즈 RNG는 다릅니다.")
+  : "";
+document.getElementById("backend-notes").innerHTML = DATA.timings.backends.map(b => "<li><strong>"+b.label+":</strong> "+(b.notes||"")+"</li>").join("");
+render(0);
+</script>
+</body>
+</html>

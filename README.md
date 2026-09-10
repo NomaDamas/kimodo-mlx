@@ -44,4 +44,4 @@ terms before downloading.
 sh scripts/build_kimodo_metal.sh
 ```
 
-See `docs/research.md` and `docs/benchmark-protocol.md`.
+See `docs/research.md`, `docs/benchmark-protocol.md`, and the measured comparison page `docs/compare.html`.

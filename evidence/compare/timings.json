@@ -1,0 +1,73 @@
+{
+  "prompt": "walk forward",
+  "frames": 30,
+  "steps": 10,
+  "seed": 42,
+  "fps": 30.0,
+  "backends": [
+    {
+      "id": "mlx-cold",
+      "label": "kimodo-mlx (Metal, cold)",
+      "backend": "mlx-metal",
+      "weight_resident": false,
+      "encode_s": 35.054324333090335,
+      "sample_s": 0.3254023748449981,
+      "e2e_s": 35.37972670793533,
+      "runnable": true,
+      "notes": "First encode reads ~15GB LLM2Vec GGUF into unified memory."
+    },
+    {
+      "id": "mlx-warm",
+      "label": "kimodo-mlx (Metal, weights resident)",
+      "backend": "mlx-metal",
+      "weight_resident": true,
+      "encode_s": 1.7358248331584036,
+      "sample_s": 0.2765643331222236,
+      "e2e_s": 2.0123891662806273,
+      "runnable": true,
+      "notes": "Second encode/sample with resident weights. Motion is deterministic for a fixed seed."
+    },
+    {
+      "id": "cpp-metal",
+      "label": "kimodo.cpp (metal)",
+      "backend": "metal",
+      "weight_resident": false,
+      "encode_s": null,
+      "sample_s": null,
+      "e2e_s": 25.041643999982625,
+      "runnable": true,
+      "notes": "Native C++ generate includes text encode + motion sample. Reloads the text bundle each process."
+    },
+    {
+      "id": "cpp-cpu",
+      "label": "kimodo.cpp (cpu)",
+      "backend": "cpu",
+      "weight_resident": false,
+      "encode_s": null,
+      "sample_s": null,
+      "e2e_s": 35.50214591668919,
+      "runnable": true,
+      "notes": "Native C++ generate includes text encode + motion sample. Reloads the text bundle each process."
+    },
+    {
+      "id": "onnx",
+      "label": "ONNX Runtime / CoreML",
+      "backend": "onnx",
+      "runnable": false,
+      "e2e_s": null,
+      "notes": "onnxruntime is not installed and no Kimodo ONNX graph exists in this repo. Not measured."
+    },
+    {
+      "id": "nvidia-pytorch",
+      "label": "NVIDIA Kimodo (PyTorch MPS)",
+      "backend": "torch-mps",
+      "runnable": false,
+      "e2e_s": null,
+      "notes": "import kimodo: OK (.cache/kimodo-reference)\ntorch 2.14.0 mps available: True\nload_model(Kimodo-SOMA-RP-v1.1, device=mps, TEXT_ENCODER_MODE=local) did not return. The local encoder preset pulls McGill-NLP/LLM2Vec-Meta-Llama-3-8B-Instruct-mntp (gated Meta Llama 3). Generation from original NVIDIA Python was not completed on this Mac.\n"
+    }
+  ],
+  "quality": {
+    "posed_mae_mlx_vs_cpp_metal": 0.10696109966383557,
+    "posed_max_mlx_vs_cpp_metal": 0.6558496206998825
+  }
+}

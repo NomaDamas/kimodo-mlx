@@ -1,0 +1,3 @@
+import kimodo: OK (.cache/kimodo-reference)
+torch 2.14.0 mps available: True
+load_model(Kimodo-SOMA-RP-v1.1, device=mps, TEXT_ENCODER_MODE=local) did not return. The local encoder preset pulls McGill-NLP/LLM2Vec-Meta-Llama-3-8B-Instruct-mntp (gated Meta Llama 3). Generation from original NVIDIA Python was not completed on this Mac.
