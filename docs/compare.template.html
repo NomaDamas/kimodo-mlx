@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Kimodo Apple Silicon 비교</title>
+<title>Kimodo on Apple Silicon</title>
 <style>
   :root {
     --bg:#14120f; --panel:#1e1b16; --ink:#f3ece0; --muted:#9a917f;
@@ -39,8 +39,8 @@
 </head>
 <body>
 <header>
-  <h1>같은 문장, 세 개의 몸</h1>
-  <p class="lede">프롬프트 walk forward · 30프레임 · 10스텝 · seed 42. MLX Metal, kimodo.cpp Metal, kimodo.cpp CPU가 실제로 만든 SOMA 30관절 클립입니다. 원본 NVIDIA PyTorch와 ONNX는 이 Mac에서 생성까지 가지 못했습니다.</p>
+  <h1>One prompt, three bodies</h1>
+  <p class="lede">Prompt walk forward · 30 frames · 10 steps · seed 42. These SOMA 30-joint clips were generated on this Mac by MLX Metal, kimodo.cpp Metal, and kimodo.cpp CPU. Original NVIDIA PyTorch and ONNX did not complete generation here.</p>
 </header>
 <main>
   <div class="stages">
@@ -49,11 +49,11 @@
     <section class="stage"><h2>kimodo.cpp · CPU</h2><canvas id="c-cpu"></canvas></section>
   </div>
   <div class="controls">
-    <button id="play">재생</button>
+    <button id="play">Play</button>
     <input id="scrub" type="range" min="0" max="29" value="0"/>
     <span class="mono" id="frame">00 / 30</span>
   </div>
-  <h2>실측 시간</h2>
+  <h2>Measured time</h2>
   <table id="times"></table>
   <div class="verdict" id="verdict"></div>
   <p class="notes" id="quality"></p>
@@ -75,7 +75,7 @@ function draw(canvas, clip, frame) {
   ctx.fillStyle = "#100e0c"; ctx.fillRect(0,0,w,h);
   if (!clip) {
     ctx.fillStyle = "#c45c4a"; ctx.font = "14px IBM Plex Mono, monospace";
-    ctx.fillText("클립 없음", 16, 32);
+    ctx.fillText("no clip", 16, 32);
     return;
   }
   ctx.strokeStyle = "#2a261f";
@@ -106,7 +106,7 @@ function render(frame) {
 let frame = 0, playing = false, timer = null;
 document.getElementById("play").onclick = () => {
   playing = !playing;
-  document.getElementById("play").textContent = playing ? "정지" : "재생";
+  document.getElementById("play").textContent = playing ? "Pause" : "Play";
   if (playing) {
     timer = setInterval(() => {
       frame = (frame + 1) % (DATA.timings.frames || 30);
@@ -121,24 +121,24 @@ function pretty(v) {
   if (v == null) return "—";
   return v >= 1 ? v.toFixed(2)+"s" : (v*1000).toFixed(0)+"ms";
 }
-tb.innerHTML = "<tr><th>런타임</th><th>가중치 상주</th><th>인코드</th><th>샘플</th><th>E2E</th><th>실행</th></tr>" +
+tb.innerHTML = "<tr><th>Runtime</th><th>Resident</th><th>Encode</th><th>Sample</th><th>E2E</th><th>Ran</th></tr>" +
   DATA.timings.backends.map(b => {
-    return "<tr><td>"+b.label+"</td><td>"+(b.weight_resident ? "예" : "아니오")+"</td><td class=\"mono\">"+pretty(b.encode_s)+"</td><td class=\"mono\">"+pretty(b.sample_s)+"</td><td class=\"mono\">"+pretty(b.e2e_s)+"</td><td class=\""+(b.runnable?"ok":"no")+"\">"+(b.runnable?"실측":"미실행")+"</td></tr>";
+    return "<tr><td>"+b.label+"</td><td>"+(b.weight_resident ? "yes" : "no")+"</td><td class=\"mono\">"+pretty(b.encode_s)+"</td><td class=\"mono\">"+pretty(b.sample_s)+"</td><td class=\"mono\">"+pretty(b.e2e_s)+"</td><td class=\""+(b.runnable?"ok":"no")+"\">"+(b.runnable?"measured":"not run")+"</td></tr>";
   }).join("");
 const mlx = DATA.timings.backends.find(b => b.id==="mlx-warm");
 const cpp = DATA.timings.backends.find(b => b.id==="cpp-metal");
-let verdict = "실측이 아직 부족합니다.";
+let verdict = "Not enough measurements yet.";
 if (mlx && cpp && mlx.runnable && cpp.runnable) {
   const ratio = cpp.e2e_s / mlx.e2e_s;
   const worked = mlx.e2e_s < cpp.e2e_s;
   verdict = worked
-    ? ("효과가 있었습니다. 가중치를 올려 둔 kimodo-mlx는 kimodo.cpp Metal 대비 같은 클립을 " + ratio.toFixed(1) + "배 빨리 만들었습니다 (" + mlx.e2e_s.toFixed(2) + "s vs " + cpp.e2e_s.toFixed(2) + "s). 콜드 스타트는 15GB LLM2Vec을 읽는 비용이 비슷합니다. ONNX와 원본 NVIDIA Python은 이 머신에서 생성 실측이 없습니다.")
-    : ("가중치 상주 MLX가 cpp Metal보다 빠르지 않았습니다 (" + mlx.e2e_s.toFixed(2) + "s vs " + cpp.e2e_s.toFixed(2) + "s).");
+    ? ("It helped. With weights resident, kimodo-mlx made the same clip " + ratio.toFixed(1) + "× faster than kimodo.cpp Metal (" + mlx.e2e_s.toFixed(2) + "s vs " + cpp.e2e_s.toFixed(2) + "s). Cold start is still dominated by reading 15 GB of LLM2Vec. ONNX and original NVIDIA Python were not measured on this machine.")
+    : ("Resident MLX was not faster than cpp Metal (" + mlx.e2e_s.toFixed(2) + "s vs " + cpp.e2e_s.toFixed(2) + "s).");
 }
 document.getElementById("verdict").textContent = verdict;
 const q = DATA.timings.quality || {};
 document.getElementById("quality").textContent = q.posed_mae_mlx_vs_cpp_metal != null
-  ? ("MLX vs cpp Metal 관절 위치 MAE " + q.posed_mae_mlx_vs_cpp_metal.toFixed(4) + " m, max " + q.posed_max_mlx_vs_cpp_metal.toFixed(4) + " m. 시드는 같으나 초기 노이즈 RNG는 다릅니다.")
+  ? ("MLX vs cpp Metal joint-position MAE " + q.posed_mae_mlx_vs_cpp_metal.toFixed(4) + " m, max " + q.posed_max_mlx_vs_cpp_metal.toFixed(4) + " m. Same seed; different initial-noise RNGs.")
   : "";
 document.getElementById("backend-notes").innerHTML = DATA.timings.backends.map(b => "<li><strong>"+b.label+":</strong> "+(b.notes||"")+"</li>").join("");
 render(0);
