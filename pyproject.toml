@@ -6,9 +6,11 @@ build-backend = "setuptools.build_meta"
 name = "kimodo-mlx"
 version = "0.1.0"
 description = "Apple Silicon MLX/Metal port of NVIDIA Kimodo"
+authors = [{name = "NomaDamas"}]
+urls = {Homepage = "https://github.com/NomaDamas/kimodo-mlx", Repository = "https://github.com/NomaDamas/kimodo-mlx"}
 readme = "README.md"
 requires-python = ">=3.12"
-license = {text = "Apache-2.0"}
+license = {text = "MIT"}
 dependencies = [
   "mlx>=0.32",
   "numpy>=1.26",

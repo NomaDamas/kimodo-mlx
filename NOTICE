@@ -1,0 +1,13 @@
+kimodo-mlx
+Copyright (c) 2026 NomaDamas
+
+This product includes software developed from:
+- NVIDIA Kimodo (Apache-2.0)
+- localai-org/kimodo.cpp (Apache-2.0)
+- GGML (MIT)
+- LLM2Vec (MIT)
+- Apple MLX (MIT)
+
+Text encoding uses converted Meta Llama 3 material.
+Built with Meta Llama 3.
+See ATTRIBUTION.md and the Meta Llama 3 Community License.

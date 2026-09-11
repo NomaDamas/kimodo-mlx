@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 220" role="img" aria-label="MLX encode versus sample">
+<rect width="100%" height="100%" fill="#14120f"/>
+<text x="16" y="22" fill="#9a917f" font-family="ui-monospace, Menlo, monospace" font-size="12">kimodo-mlx breakdown · encode (disk/I-O + 8B) vs motion sample</text>
+<rect x="480" y="10" width="12" height="12" fill="#6e6456"/>
+<text x="496" y="21" fill="#9a917f" font-family="ui-monospace, Menlo, monospace" font-size="11">encode</text>
+<rect x="560" y="10" width="12" height="12" fill="#e0a24b"/>
+<text x="576" y="21" fill="#9a917f" font-family="ui-monospace, Menlo, monospace" font-size="11">sample</text>
+<text x="160" y="75.2" text-anchor="end" fill="#f3ece0" font-family="Iowan Old Style, Palatino, serif" font-size="14">mlx cold</text>
+<rect x="170" y="44" width="446.9" height="48.0" fill="#6e6456"/>
+<rect x="616.8875" y="44" width="4.1" height="48.0" fill="#e0a24b"/>
+<text x="629.03125" y="75.2" fill="#e0a24b" font-family="ui-monospace, Menlo, monospace" font-size="13">35.38s</text>
+<text x="160" y="145.2" text-anchor="end" fill="#f3ece0" font-family="Iowan Old Style, Palatino, serif" font-size="14">mlx resident</text>
+<rect x="170" y="114" width="22.2" height="48.0" fill="#6e6456"/>
+<rect x="192.185" y="114" width="3.5" height="48.0" fill="#e0a24b"/>
+<text x="203.71675" y="145.2" fill="#e0a24b" font-family="ui-monospace, Menlo, monospace" font-size="13">2.02s</text>
+</svg>
